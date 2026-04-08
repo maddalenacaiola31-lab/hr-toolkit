@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR Toolkit — Trasparenza Retributiva PMI</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#ffffff;--bg2:#f7f8fa;--bg3:#f0f2f5;
+    --text:#0f1117;--text2:#5a6278;--text3:#9aa0b4;
+    --border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.14);
+    --blue:#2563eb;--blue-bg:#eff4ff;--blue-text:#1d4ed8;
+    --green:#16a34a;--green-bg:#f0fdf4;--green-text:#15803d;
+    --amber:#d97706;--amber-bg:#fffbeb;--amber-text:#b45309;
+    --red:#dc2626;--red-bg:#fef2f2;--red-text:#b91c1c;
+    --pink:#db2777;--pink-bg:#fdf2f8;--pink-text:#9d174d;
+    --radius:8px;--radius-lg:12px;
+    --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  }
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+  
+  /* Layout */
+  .layout{display:flex;min-height:100vh}
+  .sidebar{width:220px;background:var(--bg);border-right:1px solid var(--border);padding:0;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .main{flex:1;padding:2rem;overflow-x:hidden;max-width:1100px}
+  
+  /* Sidebar */
+  .sidebar-header{padding:1.25rem 1.25rem .75rem;border-bottom:1px solid var(--border)}
+  .sidebar-logo{font-size:13px;font-weight:600;color:var(--text);letter-spacing:-.01em}
+  .sidebar-sub{font-size:11px;color:var(--text3);margin-top:2px}
+  .nav{padding:.5rem 0}
+  .nav-section{padding:.75rem 1.25rem .25rem;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+  .nav-item{display:flex;align-items:center;gap:8px;padding:.5rem 1.25rem;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+  .nav-item:hover{background:var(--bg2);color:var(--text)}
+  .nav-item.active{background:var(--blue-bg);color:var(--blue-text);font-weight:500}
+  .nav-icon{width:16px;height:16px;flex-shrink:0;opacity:.7}
+  .nav-item.active .nav-icon{opacity:1}
+  .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:100px}
+  
+  /* Panels */
+  .panel{display:none}.panel.active{display:block}
+  .page-title{font-size:20px;font-weight:600;letter-spacing:-.02em;margin-bottom:.25rem}
+  .page-sub{font-size:13px;color:var(--text2);margin-bottom:1.5rem}
+  
+  /* Metric cards */
+  .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1.5rem}
+  .metric{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;box-shadow:var(--shadow)}
+  .metric-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+  .metric-value{font-size:22px;font-weight:600;letter-spacing:-.02em}
+  .metric-sub{font-size:11px;color:var(--text3);margin-top:3px}
+  
+  /* Cards */
+  .card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+  .card-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1rem}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+  
+  /* Grid layouts */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+  @media(max-width:900px){.layout{flex-direction:column}.sidebar{width:100%;height:auto;position:static;border-right:none;border-bottom:1px solid var(--border)}.main{padding:1rem}.two-col,.three-col{grid-template-columns:1fr}}
+  
+  /* Table */
+  .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:9px 12px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;background:var(--bg2);border-bottom:1px solid var(--border)}
+  td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:var(--bg2)}
+  
+  /* Badges */
+  .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500;white-space:nowrap}
+  .b-blue{background:var(--blue-bg);color:var(--blue-text)}
+  .b-green{background:var(--green-bg);color:var(--green-text)}
+  .b-amber{background:var(--amber-bg);color:var(--amber-text)}
+  .b-red{background:var(--red-bg);color:var(--red-text)}
+  .b-pink{background:var(--pink-bg);color:var(--pink-text)}
+  .b-gray{background:var(--bg3);color:var(--text2)}
+  
+  /* Forms */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:12px;font-weight:500;color:var(--text2)}
+  input,select,textarea{padding:7px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;width:100%;transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+  
+  /* Buttons */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;font-size:13px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;text-decoration:none}
+  .btn:hover{background:var(--bg2);border-color:var(--border2)}
+  .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8}
+  .btn-success{background:var(--green-bg);color:var(--green-text);border-color:#bbf7d0}
+  .btn-success:hover{background:#dcfce7}
+  .btn-danger{background:var(--red-bg);color:var(--red-text);border-color:#fecaca}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:.75rem}
+  
+  /* Alert / info rows */
+  .alert-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+  .alert-row:last-child{border-bottom:none}
+  .alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  
+  /* GPG bar */
+  .gpg-bar-wrap{margin:.875rem 0}
+  .gpg-bar-label{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:5px}
+  .gpg-bar-track{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+  .gpg-bar-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+  
+  /* Richiesta cards */
+  .req-card{border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:.75rem;transition:border-color .15s}
+  .req-card.urgente{border-color:#fca5a5;background:#fff9f9}
+  .req-card.in-corso{border-color:#fcd34d;background:#fffdf0}
+  .req-card.evasa{border-color:#86efac;background:#f9fff9}
+  
+  /* CSV preview */
+  .csv-pre{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:'Courier New',monospace;font-size:11px;color:var(--text2);white-space:pre;overflow-x:auto;margin-top:10px;max-height:180px;overflow-y:auto;line-height:1.6}
+  
+  /* Fascia preview box */
+  .fascia-box{background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:var(--radius-lg);padding:1rem;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--text);margin-top:.75rem}
+  
+  /* Compliance banner */
+  .compliance-banner{background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem;display:flex;gap:12px;align-items:flex-start}
+  .compliance-icon{font-size:18px;margin-top:1px;flex-shrink:0}
+  .compliance-text{font-size:12px;color:var(--text2);line-height:1.6}
+  .compliance-text strong{color:var(--text);font-weight:600}
+
+  /* Toast */
+  #toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#0f1117;color:#fff;padding:10px 16px;border-radius:var(--radius-lg);font-size:13px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999}
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">HR Toolkit</div>
+      <div class="sidebar-sub">Trasparenza Retributiva PMI</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Analisi</div>
+      <button class="nav-item active" onclick="sw('overview')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" onclick="sw('gpg')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12 L6 7 L10 9 L14 4"/><circle cx="14" cy="4" r="1.5" fill="currentColor" stroke="none"/></svg>
+        Gender pay gap
+      </button>
+
+      <div class="nav-section">Gestione</div>
+      <button class="nav-item" onclick="sw('anagrafica')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        Anagrafica
+      </button>
+      <button class="nav-item" onclick="sw('aggiungi')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/><line x1="11" y1="11" x2="15" y2="11"/><line x1="13" y1="9" x2="13" y2="13"/></svg>
+        Aggiungi dip.
+      </button>
+
+      <div class="nav-section">Compliance</div>
+      <button class="nav-item" onclick="sw('fasce')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="1.5"/><line x1="5" y1="3" x2="5" y2="13"/><line x1="1" y1="8" x2="15" y2="8"/></svg>
+        Fasce retributive
+      </button>
+      <button class="nav-item" id="nav-richieste" onclick="sw('richieste')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H2a1 1 0 00-1 1v9a1 1 0 001 1h3l2 2 2-2h5a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg>
+        Richieste dip.
+        <span class="nav-badge" id="reqBadge">2</span>
+      </button>
+
+      <div class="nav-section">Export</div>
+      <button class="nav-item" onclick="sw('export')">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12h10M8 3v7M5 7l3 3 3-3"/></svg>
+        Esporta CSV / Report
+      </button>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- OVERVIEW -->
+    <div id="p-overview" class="panel active">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Riepilogo workforce e indicatori chiave — aggiornato in tempo reale</div>
+      <div class="metric-grid" id="metricsEl"></div>
+      <div class="two-col">
+        <div class="card"><div class="card-title">Distribuzione genere</div><div style="position:relative;height:180px"><canvas id="cGenere"></canvas></div></div>
+        <div class="card"><div class="card-title">Distribuzione per categoria</div><div style="position:relative;height:180px"><canvas id="cCat"></canvas></div></div>
+      </div>
+      <div class="card"><div class="card-title">RAL FTE media per categoria e genere</div><div style="position:relative;height:210px"><canvas id="cRAL"></canvas></div></div>
+      <div class="card"><div class="card-title">Alert compliance</div><div id="alertsEl"></div></div>
+    </div>
+
+    <!-- GPG -->
+    <div id="p-gpg" class="panel">
+      <div class="page-title">Gender Pay Gap</div>
+      <div class="page-sub">Calcolo automatico GPG grezzo — soglia Direttiva UE 2023/970: 5%</div>
+      <div class="metric-grid" id="gpgMetEl"></div>
+      <div class="card"><div class="card-title">GPG per categoria (RAL FTE normalizzata)</div><div id="gpgBarsEl"></div></div>
+      <div class="card"><div class="card-title">Scatter RAL FTE vs Anzianità — M vs F</div><div style="position:relative;height:240px"><canvas id="cScatter"></canvas></div></div>
+      <div class="card">
+        <div class="card-title">Sintesi testuale automatica</div>
+        <div id="gpgReportText" style="font-size:13px;line-height:1.8;color:var(--text)"></div>
+      </div>
+    </div>
+
+    <!-- ANAGRAFICA -->
+    <div id="p-anagrafica" class="panel">
+      <div class="page-title">Anagrafica dipendenti</div>
+      <div class="page-sub">Database retributivo — <span id="dipCount"></span> dipendenti</div>
+      <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+        <input id="srch" type="text" placeholder="Cerca per nome, categoria, mansione..." style="flex:1;min-width:200px" oninput="renderTable()">
+        <select id="fG" onchange="renderTable()" style="width:auto;min-width:90px"><option value="">Tutti</option><option value="M">Maschi</option><option value="F">Femmine</option></select>
+        <select id="fC" onchange="renderTable()" style="width:auto;min-width:160px"><option value="">Tutte le categorie</option></select>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>ID</th><th>Cognome Nome</th><th>Gen.</th><th>Categoria</th><th>Mansione</th><th>Orario</th><th>Contratto</th><th>RAL</th><th>Bonus</th><th>Tot.</th><th>Anz.</th><th></th></tr></thead>
+        <tbody id="tBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- FASCE -->
+    <div id="p-fasce" class="panel">
+      <div class="page-title">Fasce retributive</div>
+      <div class="page-sub">Generatore testi per annunci — art. 5 Direttiva UE 2023/970</div>
+      <div class="compliance-banner">
+        <span class="compliance-icon">&#9432;</span>
+        <div class="compliance-text"><strong>Obbligo di trasparenza negli annunci:</strong> la Direttiva UE 2023/970 (art. 5) impone di indicare la fascia retributiva in tutti gli annunci di lavoro. Per le PMI il recepimento IT è atteso entro il <strong>7 giugno 2026</strong>.</div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Parametri annuncio</div>
+          <div class="form-grid">
+            <div class="field"><label>Categoria</label><select id="fascCat" onchange="renderFasce()"><option value="">Tutte</option></select></div>
+            <div class="field"><label>Mansione</label><input id="fascMansione" type="text" placeholder="es. Responsabile Marketing" oninput="renderFascePreview()"></div>
+            <div class="field"><label>Min RAL (€)</label><input id="fascMin" type="number" oninput="renderFascePreview()"></div>
+            <div class="field"><label>Max RAL (€)</label><input id="fascMax" type="number" oninput="renderFascePreview()"></div>
+            <div class="field"><label>Tipo contratto</label><select id="fascContr" onchange="renderFascePreview()"><option>Indeterminato</option><option>Determinato</option><option>Apprendistato</option></select></div>
+            <div class="field"><label>Orario</label><select id="fascOrario" onchange="renderFascePreview()"><option>Full-time</option><option>Part-time</option></select></div>
+          </div>
+          <div class="card-title" style="margin-top:.5rem">Testo pronto per l'annuncio</div>
+          <div class="fascia-box" id="fascePreview"></div>
+          <div class="btns">
+            <button class="btn btn-success" onclick="copiaFascia()">Copia testo</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Riepilogo per categoria</div>
+          <table><thead><tr><th>Categoria</th><th>N.</th><th>Min</th><th>Max</th><th>Media</th><th>Fascia suggerita</th></tr></thead>
+          <tbody id="fasceTBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RICHIESTE -->
+    <div id="p-richieste" class="panel">
+      <div class="page-title">Richieste dipendenti</div>
+      <div class="page-sub">Tracciamento accesso informazioni retributive — art. 7 Dir. 2023/970 · risposta entro 2 mesi</div>
+      <div class="compliance-banner">
+        <span class="compliance-icon">&#9432;</span>
+        <div class="compliance-text"><strong>Obbligo di risposta:</strong> ogni dipendente può richiedere informazioni sulla propria retribuzione e sui livelli medi per categoria e genere. La risposta è obbligatoria entro <strong>2 mesi</strong> dalla richiesta. Questo registro costituisce prova documentale in caso di contenzioso o ispezione.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Nuova richiesta</div>
+        <div class="form-grid">
+          <div class="field"><label>Dipendente richiedente *</label><select id="rDip"><option value="">Seleziona...</option></select></div>
+          <div class="field"><label>Tipo richiesta *</label><select id="rTipo">
+            <option>Livello retributivo personale</option>
+            <option>Criteri di progressione salariale</option>
+            <option>RAL media per categoria e genere</option>
+            <option>Gap retributivo rispetto a colleghi stessa mansione</option>
+            <option>Informazioni su bonus e variabile</option>
+          </select></div>
+          <div class="field"><label>Data richiesta *</label><input id="rData" type="date"></div>
+          <div class="field"><label>Canale</label><select id="rCanale"><option>Email</option><option>Raccomandata</option><option>Sportello HR</option><option>Piattaforma digitale</option></select></div>
+        </div>
+        <div class="field" style="margin-bottom:.75rem"><label>Note</label><textarea id="rNote" rows="2" style="resize:vertical"></textarea></div>
+        <button class="btn btn-primary" onclick="addRichiesta()">Registra richiesta</button>
+        <div id="rMsg" style="font-size:12px;margin-top:8px"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title" style="margin-bottom:0">In corso</div><span id="reqCount" class="badge b-amber"></span></div>
+        <div id="richiesteList"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Storico evase</div>
+        <div id="richiesteEvase"></div>
+      </div>
+    </div>
+
+    <!-- EXPORT -->
+    <div id="p-export" class="panel">
+      <div class="page-title">Esporta dati</div>
+      <div class="page-sub">Export CSV e report GPG per uso interno o reporting esterno</div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Export anagrafica CSV</div>
+          <div style="margin-bottom:1rem">
+            <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px">Campi</div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:400;color:var(--text)"><input type="checkbox" id="exId" checked style="width:auto"> ID Dipendente</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:400;color:var(--text)"><input type="checkbox" id="exNome" checked style="width:auto"> Cognome e nome</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:400;color:var(--text)"><input type="checkbox" id="exGen" checked style="width:auto"> Genere</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:400;color:var(--text)"><input type="checkbox" id="exCat" checked style="width:auto"> Categoria e livello</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:400;color:var(--text)"><input type="checkbox" id="exMans" checked style="width:auto"> Mansione</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:400;color:var(--text)"><input type="checkbox" id="exContr" checked style="width:auto"> Orario e contratto</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:400;color:var(--text)"><input type="checkbox" id="exRAL" checked style="width:auto"> RAL, bonus, fringe, totale</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:400;color:var(--text)"><input type="checkbox" id="exData" checked style="width:auto"> Data assunzione e anzianità</label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:400;color:var(--text)"><input type="checkbox" id="exFTE" checked style="width:auto"> FTE e RAL FTE</label>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:8px"><label>Filtro categoria</label><select id="exFiltCat"><option value="">Tutte</option></select></div>
+          <div class="field" style="margin-bottom:8px"><label>Filtro genere</label><select id="exFiltGen"><option value="">Tutti</option><option value="M">Maschi</option><option value="F">Femmine</option></select></div>
+          <div class="field" style="margin-bottom:1rem"><label>Separatore</label><select id="exSep"><option value=";">Punto e virgola (;) — Excel IT</option><option value=",">Virgola (,)</option><option value="&#9;">Tab</option></select></div>
+          <div class="btns">
+            <button class="btn btn-primary" onclick="downloadCSV()">Scarica CSV</button>
+            <button class="btn" onclick="anteprima()">Anteprima</button>
+          </div>
+          <div id="csvPre"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Report GPG</div>
+          <div id="gpgReportTextExport" style="font-size:13px;line-height:1.8;color:var(--text);margin-bottom:1rem"></div>
+          <button class="btn btn-success" onclick="downloadGPGReport()">Scarica report .txt</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGGIUNGI -->
+    <div id="p-aggiungi" class="panel">
+      <div class="page-title">Aggiungi dipendente</div>
+      <div class="page-sub">I campi con * sono obbligatori</div>
+      <div class="card" style="max-width:680px">
+        <div class="form-grid">
+          <div class="field"><label>Cognome *</label><input id="fCog" type="text" placeholder="Rossi"></div>
+          <div class="field"><label>Nome *</label><input id="fNom" type="text" placeholder="Mario"></div>
+          <div class="field"><label>Genere *</label><select id="fGen2"><option value="">—</option><option value="M">M — Maschile</option><option value="F">F — Femminile</option></select></div>
+          <div class="field"><label>Categoria *</label><select id="fCat2"><option value="">—</option><option>Quadro</option><option>Impiegato</option><option>Operaio</option><option>Dirigente</option></select></div>
+          <div class="field"><label>Livello contrattuale</label><input id="fLiv" type="text" placeholder="A1, Q2, O2..."></div>
+          <div class="field"><label>Mansione / Job title</label><input id="fMan" type="text" placeholder="Responsabile HR"></div>
+          <div class="field"><label>Tipo orario</label><select id="fOr2"><option>Full-time</option><option>Part-time</option></select></div>
+          <div class="field"><label>Tipo contratto</label><select id="fCon2"><option>Indeterminato</option><option>Determinato</option><option>Apprendistato</option><option>Somministrazione</option></select></div>
+          <div class="field"><label>Data assunzione</label><input id="fDA2" type="date"></div>
+          <div class="field"><label>RAL annua (€) *</label><input id="fRAL2" type="number" placeholder="30000"></div>
+          <div class="field"><label>Bonus (€)</label><input id="fBon2" type="number" placeholder="0"></div>
+          <div class="field"><label>Fringe benefit (€)</label><input id="fFri2" type="number" placeholder="0"></div>
+        </div>
+        <div class="btns">
+          <button class="btn btn-primary" onclick="addDip()">Aggiungi dipendente</button>
+          <button class="btn" onclick="clearF()">Pulisci form</button>
+        </div>
+        <div id="fMsg" style="font-size:12px;margin-top:10px;font-weight:500"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+let dips = [
+  {id:'DIP01',cog:'Rossi',nom:'Mario',gen:'M',cat:'Quadro',liv:'Q2',man:'Responsabile HR',or:'Full-time',con:'Indeterminato',da:'2016-05-01',ral:42000,bon:3000,fri:600},
+  {id:'DIP02',cog:'Bianchi',nom:'Laura',gen:'F',cat:'Quadro',liv:'Q2',man:'Responsabile HR',or:'Full-time',con:'Indeterminato',da:'2017-03-15',ral:38000,bon:2500,fri:400},
+  {id:'DIP03',cog:'Ferrari',nom:'Giorgio',gen:'M',cat:'Impiegato',liv:'A2',man:'Contabile Senior',or:'Full-time',con:'Indeterminato',da:'2019-09-01',ral:30000,bon:1200,fri:0},
+  {id:'DIP04',cog:'Colombo',nom:'Sara',gen:'F',cat:'Impiegato',liv:'A2',man:'Contabile Senior',or:'Part-time',con:'Indeterminato',da:'2020-01-10',ral:18000,bon:700,fri:0},
+  {id:'DIP05',cog:'Ricci',nom:'Luca',gen:'M',cat:'Impiegato',liv:'A1',man:'Addetto Vendite',or:'Full-time',con:'Determinato',da:'2023-03-01',ral:25000,bon:800,fri:0},
+  {id:'DIP06',cog:'Marino',nom:'Giulia',gen:'F',cat:'Impiegato',liv:'A1',man:'Addetto Vendite',or:'Full-time',con:'Determinato',da:'2023-04-01',ral:24000,bon:800,fri:0},
+  {id:'DIP07',cog:'Greco',nom:'Paolo',gen:'M',cat:'Operaio',liv:'O2',man:'Tecnico',or:'Full-time',con:'Indeterminato',da:'2018-07-01',ral:28000,bon:500,fri:0},
+  {id:'DIP08',cog:'Bruno',nom:'Chiara',gen:'F',cat:'Operaio',liv:'O2',man:'Tecnico',or:'Part-time',con:'Indeterminato',da:'2019-03-01',ral:15000,bon:300,fri:0},
+];
+
+let richieste = [
+  {id:'REQ01',dipId:'DIP02',dipNome:'Bianchi Laura',tipo:'RAL media per categoria e genere',data:'2026-03-10',canale:'Email',note:'',stato:'in-corso',dataScad:'2026-05-10'},
+  {id:'REQ02',dipId:'DIP04',dipNome:'Colombo Sara',tipo:'Gap retributivo rispetto a colleghi stessa mansione',data:'2026-03-20',canale:'Sportello HR',note:'Richiesta formale',stato:'in-corso',dataScad:'2026-05-20'},
+];
+
+let nextDipId = 9, nextReqId = 3;
+const charts = {};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const fmt = n => Math.round(n).toLocaleString('it-IT');
+const fte = d => d.or === 'Part-time' ? 0.5 : 1;
+const ralFTE = d => d.ral / fte(d);
+const anz = d => { if (!d.da) return 0; return new Date().getFullYear() - new Date(d.da).getFullYear(); };
+const tot = d => d.ral + (d.bon || 0) + (d.fri || 0);
+const avg = arr => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0;
+const gpgCalc = (m, f) => m > 0 ? (m - f) / m * 100 : null;
+const cats = () => [...new Set(dips.map(d => d.cat))];
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function calcS() {
+  const m = dips.filter(d => d.gen === 'M'), f = dips.filter(d => d.gen === 'F');
+  const aM = avg(m.map(d => ralFTE(d))), aF = avg(f.map(d => ralFTE(d)));
+  const gpgByCat = cats().map(c => {
+    const cm = dips.filter(d => d.cat === c && d.gen === 'M');
+    const cf = dips.filter(d => d.cat === c && d.gen === 'F');
+    const am = avg(cm.map(d => ralFTE(d))), af = avg(cf.map(d => ralFTE(d)));
+    return { cat: c, am, af, gap: gpgCalc(am, af), nm: cm.length, nf: cf.length };
+  });
+  return { m, f, aM, aF, gpgByCat, globalGPG: gpgCalc(aM, aF) };
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+function renderMetrics() {
+  const s = calcS();
+  const gc = Math.abs(s.globalGPG) >= 5 ? '#dc2626' : '#16a34a';
+  document.getElementById('metricsEl').innerHTML = `
+    <div class="metric"><div class="metric-label">Dipendenti</div><div class="metric-value">${dips.length}</div><div class="metric-sub">${s.m.length} M · ${s.f.length} F</div></div>
+    <div class="metric"><div class="metric-label">RAL FTE media M</div><div class="metric-value">€${fmt(s.aM)}</div></div>
+    <div class="metric"><div class="metric-label">RAL FTE media F</div><div class="metric-value">€${fmt(s.aF)}</div></div>
+    <div class="metric"><div class="metric-label">GPG globale</div><div class="metric-value" style="color:${gc}">${s.globalGPG !== null ? s.globalGPG.toFixed(1) + '%' : '—'}</div><div class="metric-sub">soglia 5%</div></div>
+    <div class="metric"><div class="metric-label">Part-time F</div><div class="metric-value">${s.f.filter(d => d.or === 'Part-time').length}</div><div class="metric-sub">su ${dips.filter(d => d.or === 'Part-time').length} totali PT</div></div>
+    <div class="metric"><div class="metric-label">Richieste aperte</div><div class="metric-value" style="color:${richieste.filter(r => r.stato !== 'evasa').length > 0 ? '#d97706' : '#16a34a'}">${richieste.filter(r => r.stato !== 'evasa').length}</div><div class="metric-sub">entro 2 mesi</div></div>
+  `;
+}
+
+function renderAlerts() {
+  const s = calcS();
+  const al = [];
+  if (Math.abs(s.globalGPG) >= 5) al.push({ col: '#d97706', bg: '#fffbeb', txt: 'GPG globale ≥ 5% — analisi interna raccomandata', val: s.globalGPG.toFixed(1) + '%', cls: 'b-amber' });
+  else al.push({ col: '#16a34a', bg: '#f0fdf4', txt: 'GPG globale entro soglia (< 5%)', val: s.globalGPG.toFixed(1) + '%', cls: 'b-green' });
+  s.gpgByCat.forEach(g => { if (g.gap !== null && Math.abs(g.gap) >= 5) al.push({ col: '#d97706', bg: '#fffbeb', txt: `GPG categoria ${g.cat} ≥ 5% (${g.nm}M / ${g.nf}F)`, val: g.gap.toFixed(1) + '%', cls: 'b-amber' }); });
+  const ptF = dips.filter(d => d.or === 'Part-time' && d.gen === 'F');
+  const pt = dips.filter(d => d.or === 'Part-time');
+  if (pt.length > 1 && ptF.length / pt.length > 0.6) al.push({ col: '#d97706', bg: '#fffbeb', txt: 'Part-time prevalentemente femminile — rischio indiretto di discriminazione', val: `${ptF.length}/${pt.length}`, cls: 'b-amber' });
+  const oggi = new Date();
+  const scad = richieste.filter(r => { if (r.stato === 'evasa') return false; const d = new Date(r.dataScad); return (d - oggi) / (1000 * 86400) < 14; });
+  if (scad.length) al.push({ col: '#dc2626', bg: '#fef2f2', txt: `${scad.length} richiesta/e dipendenti in scadenza < 14 giorni`, val: 'Urgente', cls: 'b-red' });
+  document.getElementById('alertsEl').innerHTML = al.map(a => `
+    <div class="alert-row">
+      <div class="alert-dot" style="background:${a.col}"></div>
+      <span style="flex:1;font-size:13px">${a.txt}</span>
+      <span class="badge ${a.cls}">${a.val}</span>
+    </div>`).join('');
+}
+
+function renderCharts() {
+  const s = calcS(); const cl = cats();
+  if (charts.g) charts.g.destroy();
+  if (charts.c) charts.c.destroy();
+  if (charts.r) charts.r.destroy();
+  charts.g = new Chart(document.getElementById('cGenere'), { type: 'doughnut', data: { labels: ['Maschi', 'Femmine'], datasets: [{ data: [s.m.length, s.f.length], backgroundColor: ['#2563eb', '#db2777'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11, family: 'Inter' }, boxWidth: 10, padding: 12 } } } } });
+  const catColors = ['#2563eb', '#16a34a', '#d97706', '#db2777', '#7c3aed'];
+  charts.c = new Chart(document.getElementById('cCat'), { type: 'doughnut', data: { labels: cl, datasets: [{ data: cl.map(c => dips.filter(d => d.cat === c).length), backgroundColor: catColors, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11, family: 'Inter' }, boxWidth: 10, padding: 12 } } } } });
+  const ralM = cl.map(c => { const a = dips.filter(d => d.cat === c && d.gen === 'M'); return a.length ? Math.round(avg(a.map(d => ralFTE(d)))) : 0; });
+  const ralF = cl.map(c => { const a = dips.filter(d => d.cat === c && d.gen === 'F'); return a.length ? Math.round(avg(a.map(d => ralFTE(d)))) : 0; });
+  charts.r = new Chart(document.getElementById('cRAL'), { type: 'bar', data: { labels: cl, datasets: [{ label: 'Maschi', data: ralM, backgroundColor: '#2563eb' }, { label: 'Femmine', data: ralF, backgroundColor: '#db2777' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { font: { size: 11, family: 'Inter' }, boxWidth: 10 } } }, scales: { y: { ticks: { callback: v => '€' + v.toLocaleString('it-IT'), font: { size: 11 } } }, x: { ticks: { font: { size: 11 } } } } } });
+}
+
+// ── GPG ───────────────────────────────────────────────────────────────────────
+function renderGPG() {
+  const s = calcS();
+  const gc = Math.abs(s.globalGPG) >= 5 ? '#dc2626' : '#16a34a';
+  document.getElementById('gpgMetEl').innerHTML = `
+    <div class="metric"><div class="metric-label">RAL FTE M</div><div class="metric-value">€${fmt(s.aM)}</div></div>
+    <div class="metric"><div class="metric-label">RAL FTE F</div><div class="metric-value">€${fmt(s.aF)}</div></div>
+    <div class="metric"><div class="metric-label">GPG grezzo</div><div class="metric-value" style="color:${gc}">${s.globalGPG !== null ? s.globalGPG.toFixed(1) + '%' : '—'}</div></div>
+    <div class="metric"><div class="metric-label">Differenza assoluta</div><div class="metric-value">€${fmt(s.aM - s.aF)}</div></div>
+  `;
+  document.getElementById('gpgBarsEl').innerHTML = s.gpgByCat.map(g => {
+    const gap = g.gap || 0; const ok = Math.abs(gap) < 5; const pct = Math.min(Math.abs(gap) / 20 * 100, 100);
+    return `<div class="gpg-bar-wrap">
+      <div class="gpg-bar-label">
+        <span style="font-size:13px;font-weight:500">${g.cat} <span style="font-weight:400;color:var(--text3);font-size:11px">${g.nm}M / ${g.nf}F</span></span>
+        <span class="badge ${ok ? 'b-green' : 'b-amber'}">${g.gap !== null ? gap.toFixed(1) + '%' : 'n.d.'}</span>
+      </div>
+      <div class="gpg-bar-track"><div class="gpg-bar-fill" style="width:${pct}%;background:${ok ? '#16a34a' : '#d97706'}"></div></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">M: €${fmt(g.am)} FTE · F: €${fmt(g.af)} FTE</div>
+    </div>`;
+  }).join('');
+  if (charts.sc) charts.sc.destroy();
+  const mPts = s.m.map(d => ({ x: anz(d), y: Math.round(ralFTE(d)), label: d.cog }));
+  const fPts = s.f.map(d => ({ x: anz(d), y: Math.round(ralFTE(d)), label: d.cog }));
+  charts.sc = new Chart(document.getElementById('cScatter'), { type: 'scatter', data: { datasets: [{ label: 'Maschi', data: mPts, backgroundColor: '#2563eb', pointRadius: 7 }, { label: 'Femmine', data: fPts, backgroundColor: '#db2777', pointRadius: 7 }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: 20 }, plugins: { legend: { labels: { font: { size: 11, family: 'Inter' }, boxWidth: 10 } }, tooltip: { callbacks: { label: ctx => `${ctx.raw.label}: €${fmt(ctx.raw.y)} (${ctx.raw.x} anni)` } } }, scales: { x: { title: { display: true, text: 'Anzianità (anni)', font: { size: 11 } }, ticks: { font: { size: 11 } } }, y: { title: { display: true, text: 'RAL FTE (€)', font: { size: 11 } }, ticks: { callback: v => '€' + v.toLocaleString('it-IT'), font: { size: 11 } } } } } });
+  renderGPGReportText();
+}
+
+function renderGPGReportText() {
+  const s = calcS(); const ok = Math.abs(s.globalGPG) < 5;
+  const html = `<p>Alla data odierna la società conta <strong>${dips.length} dipendenti</strong> — ${s.m.length} maschi, ${s.f.length} femmine.</p>
+    <p style="margin-top:.75rem">Il <strong>gender pay gap grezzo</strong> su base RAL FTE è pari a <strong style="color:${ok ? '#16a34a' : '#dc2626'}">${s.globalGPG !== null ? s.globalGPG.toFixed(1) + '%' : 'n.d.'}</strong> — ${ok ? 'entro la soglia del 5% prevista dalla Direttiva UE 2023/970.' : 'oltre la soglia del 5%. Si raccomanda un\'analisi interna per verificare e documentare le cause.'}</p>
+    <p style="margin-top:.75rem">Per categoria: ${s.gpgByCat.map(g => `<strong>${g.cat}</strong> ${g.gap !== null ? g.gap.toFixed(1) + '%' : 'n.d.'} <span class="badge ${g.gap !== null && Math.abs(g.gap) < 5 ? 'b-green' : 'b-amber'}">${g.gap !== null && Math.abs(g.gap) < 5 ? 'OK' : 'Verifica'}</span>`).join(' &nbsp;·&nbsp; ')}</p>
+    <p style="margin-top:.875rem;font-size:12px;color:var(--text3)">Regime PMI semplificato (< 100 dip.) · Soglia 5% (art. 10 Dir. 2023/970) · Recepimento IT: 7 giugno 2026</p>`;
+  const el1 = document.getElementById('gpgReportText');
+  const el2 = document.getElementById('gpgReportTextExport');
+  if (el1) el1.innerHTML = html;
+  if (el2) el2.innerHTML = html;
+}
+
+// ── ANAGRAFICA ────────────────────────────────────────────────────────────────
+function renderTable() {
+  const srch = document.getElementById('srch').value.toLowerCase();
+  const fg = document.getElementById('fG').value;
+  const fc = document.getElementById('fC').value;
+  const filtered = dips.filter(d => {
+    const txt = (d.cog + ' ' + d.nom + ' ' + d.cat + ' ' + d.man).toLowerCase();
+    return (!srch || txt.includes(srch)) && (!fg || d.gen === fg) && (!fc || d.cat === fc);
+  });
+  document.getElementById('dipCount').textContent = filtered.length + (filtered.length < dips.length ? ' (filtrati su ' + dips.length + ')' : '');
+  document.getElementById('tBody').innerHTML = filtered.map(d => `<tr>
+    <td style="color:var(--text3);font-size:11px">${d.id}</td>
+    <td style="font-weight:500">${d.cog} ${d.nom}</td>
+    <td><span class="badge ${d.gen === 'M' ? 'b-blue' : 'b-pink'}">${d.gen}</span></td>
+    <td>${d.cat}</td>
+    <td style="color:var(--text2)">${d.man}</td>
+    <td><span class="badge b-gray">${d.or === 'Part-time' ? 'PT' : 'FT'}</span></td>
+    <td><span class="badge ${d.con === 'Indeterminato' ? 'b-green' : 'b-amber'}">${d.con.substring(0, 3)}</span></td>
+    <td style="font-weight:500">€${fmt(d.ral)}</td>
+    <td style="color:var(--text2)">€${fmt(d.bon || 0)}</td>
+    <td>€${fmt(tot(d))}</td>
+    <td style="color:var(--text3)">${anz(d)}a</td>
+    <td><button class="btn" style="padding:3px 8px;font-size:11px;color:#dc2626;border-color:#fecaca" onclick="remDip('${d.id}')">Rimuovi</button></td>
+  </tr>`).join('');
+}
+
+// ── FASCE ─────────────────────────────────────────────────────────────────────
+function renderFasce() {
+  const cat = document.getElementById('fascCat').value;
+  const filtered = cat ? dips.filter(d => d.cat === cat) : dips;
+  if (filtered.length) {
+    const rals = filtered.map(d => d.ral);
+    document.getElementById('fascMin').value = Math.round(Math.min(...rals) * 0.95);
+    document.getElementById('fascMax').value = Math.round(Math.max(...rals) * 1.05);
+  }
+  renderFascePreview();
+  renderFasceTable();
+}
+
+function renderFascePreview() {
+  const mansione = document.getElementById('fascMansione').value || '[Mansione]';
+  const mn = parseInt(document.getElementById('fascMin').value) || 0;
+  const mx = parseInt(document.getElementById('fascMax').value) || 0;
+  const contr = document.getElementById('fascContr').value;
+  const orario = document.getElementById('fascOrario').value;
+  document.getElementById('fascePreview').textContent =
+    `Retribuzione annua lorda (RAL): € ${fmt(mn)} – € ${fmt(mx)}\nContratto: ${contr} · Orario: ${orario}\n\nLa fascia retributiva è indicata ai sensi dell'art. 5 della Direttiva UE 2023/970 sulla trasparenza retributiva. La retribuzione effettiva sarà definita in base all'esperienza, alle qualifiche e ai criteri interni di inquadramento.\n\nMansione: ${mansione}`;
+}
+
+function renderFasceTable() {
+  document.getElementById('fasceTBody').innerHTML = cats().map(c => {
+    const arr = dips.filter(d => d.cat === c);
+    if (!arr.length) return '';
+    const rals = arr.map(d => d.ral);
+    const mn = Math.min(...rals), mx = Math.max(...rals);
+    return `<tr><td>${c}</td><td>${arr.length}</td><td>€${fmt(mn)}</td><td>€${fmt(mx)}</td><td>€${fmt(avg(rals))}</td><td style="color:#2563eb;font-weight:500">€${fmt(mn * 0.95)} – €${fmt(mx * 1.05)}</td></tr>`;
+  }).join('');
+}
+
+function copiaFascia() {
+  navigator.clipboard.writeText(document.getElementById('fascePreview').textContent).then(() => toast('Testo copiato!'));
+}
+
+// ── RICHIESTE ─────────────────────────────────────────────────────────────────
+function renderRichieste() {
+  const aperte = richieste.filter(r => r.stato !== 'evasa');
+  const evase = richieste.filter(r => r.stato === 'evasa');
+  const oggi = new Date();
+  document.getElementById('reqCount').textContent = aperte.length + ' aperte';
+  document.getElementById('richiesteList').innerHTML = aperte.length ? aperte.map(r => {
+    const scad = new Date(r.dataScad);
+    const gg = Math.round((scad - oggi) / (1000 * 86400));
+    const urg = gg < 14;
+    return `<div class="req-card ${urg ? 'urgente' : 'in-corso'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:600;font-size:13px">${r.id} — ${r.dipNome}</span>
+        <span class="badge ${urg ? 'b-red' : 'b-amber'}">${gg > 0 ? gg + ' gg alla scadenza' : 'Scaduta'}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:4px">${r.tipo}</div>
+      <div style="font-size:12px;color:var(--text3)">${r.canale} · ricevuta ${r.data} · scadenza risposta: <strong>${r.dataScad}</strong></div>
+      ${r.note ? `<div style="font-size:12px;color:var(--text3);margin-top:4px;font-style:italic">${r.note}</div>` : ''}
+      <div style="margin-top:10px;display:flex;gap:6px">
+        <button class="btn btn-success" style="font-size:12px;padding:4px 10px" onclick="evadiRichiesta('${r.id}')">Segna evasa</button>
+      </div>
+    </div>`;
+  }).join('') : '<p style="font-size:13px;color:var(--text3);padding:.5rem 0">Nessuna richiesta aperta.</p>';
+  document.getElementById('richiesteEvase').innerHTML = evase.length ? evase.map(r =>
+    `<div class="req-card evasa"><div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:500">${r.id} — ${r.dipNome}</span><span class="badge b-green">Evasa</span></div><div style="font-size:12px;color:var(--text3);margin-top:3px">${r.tipo} · ${r.data}</div></div>`
+  ).join('') : '<p style="font-size:13px;color:var(--text3);padding:.5rem 0">Nessuna richiesta evasa.</p>';
+  const badge = document.getElementById('reqBadge');
+  if (aperte.length) { badge.textContent = aperte.length; badge.style.display = 'inline'; }
+  else badge.style.display = 'none';
+}
+
+function addRichiesta() {
+  const dipId = document.getElementById('rDip').value;
+  const tipo = document.getElementById('rTipo').value;
+  const data = document.getElementById('rData').value;
+  const msg = document.getElementById('rMsg');
+  if (!dipId || !data) { msg.style.color = '#dc2626'; msg.textContent = 'Seleziona dipendente e data richiesta'; return; }
+  const dip = dips.find(d => d.id === dipId);
+  const scad = new Date(data); scad.setMonth(scad.getMonth() + 2);
+  richieste.push({ id: 'REQ' + String(nextReqId++).padStart(2, '0'), dipId, dipNome: dip.cog + ' ' + dip.nom, tipo, data, canale: document.getElementById('rCanale').value, note: document.getElementById('rNote').value, stato: 'in-corso', dataScad: scad.toISOString().split('T')[0] });
+  msg.style.color = '#16a34a'; msg.textContent = 'Richiesta registrata. Scadenza: ' + scad.toISOString().split('T')[0];
+  renderRichieste(); renderMetrics(); renderAlerts();
+}
+
+function evadiRichiesta(id) {
+  const r = richieste.find(x => x.id === id); if (r) r.stato = 'evasa';
+  renderRichieste(); renderMetrics(); renderAlerts();
+  toast('Richiesta ' + id + ' segnata come evasa');
+}
+
+// ── EXPORT ────────────────────────────────────────────────────────────────────
+function buildCSV() {
+  const sep = document.getElementById('exSep').value;
+  const fg = document.getElementById('exFiltGen').value;
+  const fc = document.getElementById('exFiltCat').value;
+  const filtered = dips.filter(d => (!fg || d.gen === fg) && (!fc || d.cat === fc));
+  const hdr = [];
+  if (document.getElementById('exId').checked) hdr.push('ID');
+  if (document.getElementById('exNome').checked) hdr.push('Cognome', 'Nome');
+  if (document.getElementById('exGen').checked) hdr.push('Genere');
+  if (document.getElementById('exCat').checked) hdr.push('Categoria', 'Livello');
+  if (document.getElementById('exMans').checked) hdr.push('Mansione');
+  if (document.getElementById('exContr').checked) hdr.push('Tipo_Orario', 'Tipo_Contratto');
+  if (document.getElementById('exRAL').checked) hdr.push('RAL', 'Bonus', 'Fringe', 'Retrib_Totale');
+  if (document.getElementById('exData').checked) hdr.push('Data_Assunzione', 'Anzianita_Anni');
+  if (document.getElementById('exFTE').checked) hdr.push('FTE', 'RAL_FTE');
+  const rows = [hdr.join(sep)];
+  filtered.forEach(d => {
+    const row = [];
+    if (document.getElementById('exId').checked) row.push(d.id);
+    if (document.getElementById('exNome').checked) row.push(d.cog, d.nom);
+    if (document.getElementById('exGen').checked) row.push(d.gen);
+    if (document.getElementById('exCat').checked) row.push(d.cat, d.liv);
+    if (document.getElementById('exMans').checked) row.push(d.man);
+    if (document.getElementById('exContr').checked) row.push(d.or, d.con);
+    if (document.getElementById('exRAL').checked) row.push(d.ral, d.bon || 0, d.fri || 0, tot(d));
+    if (document.getElementById('exData').checked) row.push(d.da, anz(d));
+    if (document.getElementById('exFTE').checked) row.push(fte(d), Math.round(ralFTE(d)));
+    rows.push(row.join(sep));
+  });
+  return rows.join('\n');
+}
+
+function downloadCSV() {
+  const csv = buildCSV();
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'anagrafica_retributiva.csv'; a.click();
+  toast('CSV scaricato!');
+}
+
+function anteprima() {
+  document.getElementById('csvPre').innerHTML = `<div class="csv-pre">${buildCSV().split('\n').slice(0, 7).join('\n')}</div>`;
+}
+
+function downloadGPGReport() {
+  const s = calcS();
+  let txt = `REPORT GENDER PAY GAP\nData: ${new Date().toLocaleDateString('it-IT')}\nToolkit Trasparenza Retributiva — Dir. UE 2023/970\n${'─'.repeat(50)}\n\n`;
+  txt += `FORZA LAVORO\nTotale dipendenti: ${dips.length} (${s.m.length} M, ${s.f.length} F)\n\n`;
+  txt += `GPG GLOBALE (RAL FTE)\nRAL FTE media Maschi:   € ${fmt(s.aM)}\nRAL FTE media Femmine:  € ${fmt(s.aF)}\nGPG grezzo:             ${s.globalGPG !== null ? s.globalGPG.toFixed(2) + '%' : 'n.d.'}\nStato:                  ${Math.abs(s.globalGPG) < 5 ? 'ENTRO SOGLIA (< 5%)' : 'OLTRE SOGLIA — analisi raccomandata'}\n\n`;
+  txt += `GPG PER CATEGORIA\n`;
+  s.gpgByCat.forEach(g => { txt += `${g.cat.padEnd(14)} M=€${fmt(g.am)} (n=${g.nm})  F=€${fmt(g.af)} (n=${g.nf})  GPG=${g.gap !== null ? g.gap.toFixed(2) + '%' : 'n.d.'}  ${g.gap !== null && Math.abs(g.gap) < 5 ? 'OK' : 'VERIFICA'}\n`; });
+  txt += `\nNOTE NORMATIVE\nRegime:      PMI < 100 dipendenti (semplificato)\nSoglia GPG:  5% (art. 10 Dir. 2023/970)\nRecepimento: 7 giugno 2026 (IT)\n`;
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob); const a = document.createElement('a');
+  a.href = url; a.download = 'report_gpg.txt'; a.click();
+  toast('Report GPG scaricato!');
+}
+
+// ── AGGIUNGI ──────────────────────────────────────────────────────────────────
+function addDip() {
+  const cog = document.getElementById('fCog').value.trim();
+  const nom = document.getElementById('fNom').value.trim();
+  const gen = document.getElementById('fGen2').value;
+  const cat = document.getElementById('fCat2').value;
+  const ral = parseFloat(document.getElementById('fRAL2').value) || 0;
+  const msg = document.getElementById('fMsg');
+  if (!cog || !nom || !gen || !cat || !ral) { msg.style.color = '#dc2626'; msg.textContent = 'Compila i campi obbligatori (Cognome, Nome, Genere, Categoria, RAL)'; return; }
+  const d = { id: 'DIP' + String(nextDipId++).padStart(2, '0'), cog, nom, gen, cat, liv: document.getElementById('fLiv').value, man: document.getElementById('fMan').value, or: document.getElementById('fOr2').value, con: document.getElementById('fCon2').value, da: document.getElementById('fDA2').value, ral, bon: parseFloat(document.getElementById('fBon2').value) || 0, fri: parseFloat(document.getElementById('fFri2').value) || 0 };
+  dips.push(d);
+  msg.style.color = '#16a34a'; msg.textContent = `${cog} ${nom} aggiunto (${d.id})`;
+  clearF(); refreshAll();
+  toast(cog + ' ' + nom + ' aggiunto!');
+}
+
+function clearF() {
+  ['fCog', 'fNom', 'fLiv', 'fMan', 'fDA2', 'fRAL2', 'fBon2', 'fFri2'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+  ['fGen2', 'fCat2'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+}
+
+function remDip(id) { dips = dips.filter(d => d.id !== id); refreshAll(); toast('Dipendente rimosso'); }
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function populateFilters() {
+  const cl = cats();
+  ['fC', 'exFiltCat', 'fascCat'].forEach(sid => {
+    const el = document.getElementById(sid); if (!el) return;
+    const first = sid === 'fC' ? '<option value="">Tutte le categorie</option>' : '<option value="">Tutte</option>';
+    el.innerHTML = first + cl.map(c => `<option>${c}</option>`).join('');
+  });
+  const rDip = document.getElementById('rDip');
+  if (rDip) rDip.innerHTML = '<option value="">Seleziona...</option>' + dips.map(d => `<option value="${d.id}">${d.cog} ${d.nom} (${d.id})</option>`).join('');
+}
+
+function refreshAll() {
+  populateFilters(); renderMetrics(); renderAlerts(); renderCharts();
+  renderGPGReportText();
+  if (currentTab === 'gpg') renderGPG();
+  if (currentTab === 'anagrafica') renderTable();
+  if (currentTab === 'fasce') { renderFasce(); }
+  if (currentTab === 'richieste') renderRichieste();
+}
+
+let currentTab = 'overview';
+function sw(tab) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navMap = { overview: 0, gpg: 1, anagrafica: 2, aggiungi: 3, fasce: 4, richieste: 5, export: 6 };
+  const items = document.querySelectorAll('.nav-item');
+  const idx = [0, 1, 2, 3, 4, 5, 6];
+  document.querySelectorAll('.nav-item').forEach((el, i) => {
+    const tabs = ['overview', 'gpg', 'anagrafica', 'aggiungi', 'fasce', 'richieste', 'export'];
+    el.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('p-' + tab).classList.add('active');
+  currentTab = tab;
+  if (tab === 'gpg') renderGPG();
+  if (tab === 'anagrafica') { populateFilters(); renderTable(); }
+  if (tab === 'fasce') { populateFilters(); renderFasce(); }
+  if (tab === 'richieste') { populateFilters(); renderRichieste(); }
+  if (tab === 'export') { populateFilters(); renderGPGReportText(); }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.getElementById('rData').value = new Date().toISOString().split('T')[0];
+populateFilters(); renderMetrics(); renderAlerts(); renderCharts();
+renderFasceTable(); renderFascePreview(); renderGPGReportText(); renderRichieste();
+</script>
+</body>
+</html>
